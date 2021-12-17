@@ -1,0 +1,3 @@
+[submodule "ext/ManiSkill"]
+	path = ext/ManiSkill
+	url = https://github.com/ic/ManiSkill.git
