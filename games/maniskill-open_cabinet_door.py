@@ -10,7 +10,10 @@ from .abstract_game import AbstractGame
 
 sys.path.append("ext/ManiSkill")
 import mani_skill.env
+#from mani_skill.utils.ee import EndEffectorInterface
 
+ACTION_SPACE = list(range(12 * 2)) # 12 joints, 2 options (+/-) or each.
+ACTION_PITCH = 0.1
 
 class MuZeroConfig:
     def __init__(self):
@@ -21,13 +24,11 @@ class MuZeroConfig:
 
         ### Game
         self.observation_shape = (
-            1,
-            1,
-            4,
+            9,
+            160,
+            400,
         )  # Dimensions of the game observation, must be 3D (channel, height, width). For a 1D array, please reshape it to (1, 1, length of array)
-        self.action_space = list(
-            range(2)
-        )  # Fixed list of all possible actions. You should only edit the length
+        self.action_space = ACTION_SPACE  # Fixed list of all possible actions. You should only edit the length
         self.players = list(
             range(1)
         )  # List of players. You should only edit the length
@@ -40,8 +41,8 @@ class MuZeroConfig:
         ### Self-Play
         self.num_workers = 1  # Number of simultaneous threads/workers self-playing to feed the replay buffer
         self.selfplay_on_gpu = False
-        self.max_moves = 500  # Maximum number of moves if game is not finished before
-        self.num_simulations = 50  # Number of future moves self-simulated
+        self.max_moves = 100  # Maximum number of moves if game is not finished before
+        self.num_simulations = 10  # Number of future moves self-simulated
         self.discount = 0.997  # Chronological discount of the reward
         self.temperature_threshold = None  # Number of moves before dropping the temperature given by visit_softmax_temperature_fn to 0 (ie selecting the best action). If None, visit_softmax_temperature_fn is used every time
 
@@ -54,7 +55,7 @@ class MuZeroConfig:
         self.pb_c_init = 1.25
 
         ### Network
-        self.network = "fullyconnected"  # "resnet" / "fullyconnected"
+        self.network = "resnet"  # "resnet" / "fullyconnected"
         self.support_size = 10  # Value and reward are scaled (with almost sqrt) and encoded on a vector with a range of -support_size to support_size. Choose it so that support_size <= sqrt(max(abs(discounted reward)))
 
         # Residual Network
@@ -153,31 +154,45 @@ class MuZeroConfig:
 
 class Game(AbstractGame):
     def __init__(self, seed=None):
-        self.env = gym.make('OpenCabinetDoor-v0')
-        self.env.set_env_mode(obs_mode='state', reward_type='sparse')
+        env_name = 'OpenCabinetDoor-v0'
+        self.env = gym.make(env_name)
+        self.env.set_env_mode(obs_mode='rgbd', reward_type='sparse')
+        self.ee_interface = EndEffectorInterface(env_name)
+        # Format: https://github.com/haosulab/ManiSkill/wiki/Detailed-Explanation-of-Action
+        self.action = numpy.zeros((12,), dtype=float)
         if seed is not None:
             self.env.seed(seed)
-        self.action_names = {
-                0: "x velocity of moving platform",
-                1: "y velocity of moving platform",
-                2: "rotation velocity of moving platform",
-                3: "height change velocity of robot body",
-                4: "panda joint angle 1",
-                5: "panda joint angle 2",
-                6: "panda joint angle 3",
-                7: "panda joint angle 4",
-                8: "panda joint angle 5",
-                9: "panda joint angle 6",
-                10: "panda joint finger 1",
-                11: "panda joint finger 2",
-                }
+        #self.action_names = {
+        #        0: "x velocity of moving platform",
+        #        1: "y velocity of moving platform",
+        #        2: "rotation velocity of moving platform",
+        #        3: "height change velocity of robot body",
+        #        4: "panda joint angle 1",
+        #        5: "panda joint angle 2",
+        #        6: "panda joint angle 3",
+        #        7: "panda joint angle 4",
+        #        8: "panda joint angle 5",
+        #        9: "panda joint angle 6",
+        #        10: "panda joint finger 1",
+        #        11: "panda joint finger 2",
+        #        }
 
     def step(self, action):
+        #observation = self.ee_interface.get_robot_qpos_from_obs(observation["agent"])
+        action = self._mz2ms(action)
         observation, reward, done, _ = self.env.step(action)
+        observation = observation["rgbd"]["rgb"]
         return numpy.array([[observation]]), reward, done
 
     def legal_actions(self):
-        return self.env.action_space
+        return ACTION_SPACE
+
+    def _mz2ms(self, action):
+        joint = action // 2
+        op = action // 12
+        base = numpy.zeros((12,), dtype=float)
+        base[join] = [-1.0, 1.0][op] * ACTION_PITCH
+        return base
 
     def reset(self):
         return numpy.array([[self.env.reset()]])
@@ -189,5 +204,5 @@ class Game(AbstractGame):
         self.env.render()
         input("Press enter to take a step ")
 
-    def action_to_string(self, action_number):
-        return f"{action_number}. {self.action_names[action_number]}"
+    #def action_to_string(self, action_number):
+    #    return f"{action_number}. {self.action_names[action_number]}"
