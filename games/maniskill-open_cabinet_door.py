@@ -157,7 +157,7 @@ class Game(AbstractGame):
         env_name = 'OpenCabinetDoor-v0'
         self.env = gym.make(env_name)
         self.env.set_env_mode(obs_mode='rgbd', reward_type='sparse')
-        self.ee_interface = EndEffectorInterface(env_name)
+        #self.ee_interface = EndEffectorInterface(env_name)
         # Format: https://github.com/haosulab/ManiSkill/wiki/Detailed-Explanation-of-Action
         self.action = numpy.zeros((12,), dtype=float)
         if seed is not None:
