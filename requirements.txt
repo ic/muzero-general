@@ -1,8 +1,10 @@
 ext/ManiSkill
-numpy
-torch==1.7.1
-tensorboard
+
 gym
+hiredis
+nevergrad
+numpy
 ray
 seaborn
-nevergrad
+tensorboard
+torch==1.7.1
