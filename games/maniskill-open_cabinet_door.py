@@ -12,7 +12,7 @@ sys.path.append("ext/ManiSkill")
 import mani_skill.env
 #from mani_skill.utils.ee import EndEffectorInterface
 
-ACTION_SPACE = list(range(12 * 2)) # 12 joints, 2 options (+/-) or each.
+ACTION_SPACE = list(range(13 * 2)) # 13 joints, 2 options (+/-) or each.
 ACTION_PITCH = 0.1
 
 class MuZeroConfig:
@@ -41,8 +41,8 @@ class MuZeroConfig:
         ### Self-Play
         self.num_workers = 1  # Number of simultaneous threads/workers self-playing to feed the replay buffer
         self.selfplay_on_gpu = False
-        self.max_moves = 100  # Maximum number of moves if game is not finished before
-        self.num_simulations = 10  # Number of future moves self-simulated
+        self.max_moves = 10  # Maximum number of moves if game is not finished before
+        self.num_simulations = 3  # Number of future moves self-simulated
         self.discount = 0.997  # Chronological discount of the reward
         self.temperature_threshold = None  # Number of moves before dropping the temperature given by visit_softmax_temperature_fn to 0 (ie selecting the best action). If None, visit_softmax_temperature_fn is used every time
 
@@ -97,12 +97,12 @@ class MuZeroConfig:
         self.save_model = (
             True  # Save the checkpoint in results_path as model.checkpoint
         )
-        self.training_steps = 10000  # Total number of training steps (ie weights update according to a batch)
+        self.training_steps = 100000  # Total number of training steps (ie weights update according to a batch)
         self.batch_size = (
-            128  # Number of parts of games to train on at each training step
+            64  # Number of parts of games to train on at each training step
         )
         self.checkpoint_interval = (
-            10  # Number of training steps before using the model for self-playing
+            3  # Number of training steps before using the model for self-playing
         )
         self.value_loss_weight = 1  # Scale the value loss to avoid overfitting of the value function, paper recommends 0.25 (See paper appendix Reanalyze)
         self.train_on_gpu = torch.cuda.is_available()  # Train on GPU if available
@@ -118,13 +118,13 @@ class MuZeroConfig:
 
         ### Replay Buffer
         self.replay_buffer_size = (
-            500  # Number of self-play games to keep in the replay buffer
+            100  # Number of self-play games to keep in the replay buffer
         )
         self.num_unroll_steps = (
-            10  # Number of game moves to keep for every batch element
+            5  # Number of game moves to keep for every batch element
         )
-        self.td_steps = 50  # Number of steps in the future to take into account for calculating the target value
-        self.PER = True  # Prioritized Replay (See paper appendix Training), select in priority the elements in the replay buffer which are unexpected for the network
+        self.td_steps = 30  # Number of steps in the future to take into account for calculating the target value
+        self.PER = False  # Prioritized Replay (See paper appendix Training), select in priority the elements in the replay buffer which are unexpected for the network
         self.PER_alpha = 0.5  # How much prioritization is used, 0 corresponding to the uniform case, paper suggests 1
 
         # Reanalyze (See paper appendix Reanalyse)
@@ -159,7 +159,6 @@ class Game(AbstractGame):
         self.env.set_env_mode(obs_mode='rgbd', reward_type='sparse')
         #self.ee_interface = EndEffectorInterface(env_name)
         # Format: https://github.com/haosulab/ManiSkill/wiki/Detailed-Explanation-of-Action
-        self.action = numpy.zeros((12,), dtype=float)
         if seed is not None:
             self.env.seed(seed)
         #self.action_names = {
@@ -178,24 +177,23 @@ class Game(AbstractGame):
         #        }
 
     def step(self, action):
-        #observation = self.ee_interface.get_robot_qpos_from_obs(observation["agent"])
         action = self._mz2ms(action)
         observation, reward, done, _ = self.env.step(action)
-        observation = observation["rgbd"]["rgb"]
-        return numpy.array([[observation]]), reward, done
+        observation = observation["rgbd"]["rgb"].reshape((9, 160, 400))
+        return observation, reward, done
 
     def legal_actions(self):
         return ACTION_SPACE
 
     def _mz2ms(self, action):
         joint = action // 2
-        op = action // 12
-        base = numpy.zeros((12,), dtype=float)
-        base[join] = [-1.0, 1.0][op] * ACTION_PITCH
+        op = action // 13
+        base = numpy.zeros((13,), dtype=float)
+        base[joint] = [-1.0, 1.0][op] * ACTION_PITCH
         return base
 
     def reset(self):
-        return numpy.array([[self.env.reset()]])
+        return self.env.reset()["rgbd"]["rgb"].reshape((9, 160, 400))
 
     def close(self):
         self.env.close()
