@@ -94,3 +94,6 @@ dmypy.json
 
 # Generated files
 results/
+
+# Downloaded datasets
+partnet-mobility-dataset/
