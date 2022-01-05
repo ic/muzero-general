@@ -627,10 +627,10 @@ if __name__ == "__main__":
             for filename in sorted(
                 os.listdir(os.path.dirname(os.path.realpath(__file__)) + "/games")
             )
-            if filename.endswith(".py") and filename != "abstract_game.py"
+            if filename.endswith("_game.py") and filename != "abstract_game.py"
         ]
         for i in range(len(games)):
-            print(f"{i}. {games[i]}")
+            print(f"{i}. {games[i][:-5]}")
         choice = input("Enter a number to choose the game: ")
         valid_inputs = [str(i) for i in range(len(games))]
         while choice not in valid_inputs:

@@ -8,10 +8,6 @@ import torch
 
 from .abstract_game import AbstractGame
 
-sys.path.append("ext/ManiSkill")
-import mani_skill.env
-
-# from mani_skill.utils.ee import EndEffectorInterface
 
 ACTION_SPACE = list(range(13 * 2))  # 13 joints, 2 options (+/-) or each.
 ACTION_PITCH = 0.1
@@ -160,7 +156,11 @@ class MuZeroConfig:
 
 class Game(AbstractGame):
     def __init__(self, seed=None):
+        # Needed to access the environment class.
+        sys.path.append("ext/ManiSkill")
+        import mani_skill.env
         env_name = "OpenCabinetDoor-v0"
+
         self.env = gym.make(env_name)
         self.env.set_env_mode(obs_mode="rgbd", reward_type="dense")
         self.history = numpy.zeros((9, 160, 400))
