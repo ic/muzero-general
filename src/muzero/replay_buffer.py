@@ -79,7 +79,9 @@ class ReplayBuffer:
         ) = ([], [], [], [], [], [], [])
         weight_batch = [] if self.config.PER else None
 
-        for game_id, game_history, game_prob in self.sample_n_games(self.config.batch_size):
+        for game_id, game_history, game_prob in self.sample_n_games(
+            self.config.batch_size
+        ):
             game_pos, pos_prob = self.sample_position(game_history)
 
             values, rewards, policies, actions = self.make_target(
@@ -162,13 +164,17 @@ class ReplayBuffer:
                 game_probs.append(game_history.game_priority)
             game_probs = numpy.array(game_probs, dtype="float32")
             game_probs /= numpy.sum(game_probs)
-            game_prob_dict = dict([(game_id, prob) for game_id, prob in zip(game_id_list, game_probs)])
+            game_prob_dict = dict(
+                [(game_id, prob) for game_id, prob in zip(game_id_list, game_probs)]
+            )
             selected_games = numpy.random.choice(game_id_list, n_games, p=game_probs)
         else:
             selected_games = numpy.random.choice(list(self.buffer.keys()), n_games)
             game_prob_dict = {}
-        ret = [(game_id, self.buffer[game_id], game_prob_dict.get(game_id))
-               for game_id in selected_games]
+        ret = [
+            (game_id, self.buffer[game_id], game_prob_dict.get(game_id))
+            for game_id in selected_games
+        ]
         return ret
 
     def sample_position(self, game_history, force_uniform=False):

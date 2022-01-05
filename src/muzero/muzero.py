@@ -149,11 +149,13 @@ class MuZero:
 
         # Initialize workers
         self.training_worker = trainer.Trainer.options(
-            num_cpus=0, num_gpus=num_gpus_per_worker if self.config.train_on_gpu else 0,
+            num_cpus=0,
+            num_gpus=num_gpus_per_worker if self.config.train_on_gpu else 0,
         ).remote(self.checkpoint, self.config)
 
         self.shared_storage_worker = shared_storage.SharedStorage.remote(
-            self.checkpoint, self.config,
+            self.checkpoint,
+            self.config,
         )
         self.shared_storage_worker.set_info.remote("terminate", False)
 
@@ -172,7 +174,10 @@ class MuZero:
                 num_cpus=0,
                 num_gpus=num_gpus_per_worker if self.config.selfplay_on_gpu else 0,
             ).remote(
-                self.checkpoint, self.Game, self.config, self.config.seed + seed,
+                self.checkpoint,
+                self.Game,
+                self.config,
+                self.config.seed + seed,
             )
             for seed in range(self.config.num_workers)
         ]
@@ -203,7 +208,8 @@ class MuZero:
         """
         # Launch the test worker to get performance metrics
         self.test_worker = self_play.SelfPlay.options(
-            num_cpus=0, num_gpus=num_gpus,
+            num_cpus=0,
+            num_gpus=num_gpus,
         ).remote(
             self.checkpoint,
             self.Game,
@@ -231,7 +237,8 @@ class MuZero:
         )
         # Save model representation
         writer.add_text(
-            "Model summary", self.summary,
+            "Model summary",
+            self.summary,
         )
         # Loop for updating the training performance
         counter = 0
@@ -256,16 +263,24 @@ class MuZero:
             while info["training_step"] < self.config.training_steps:
                 info = ray.get(self.shared_storage_worker.get_info.remote(keys))
                 writer.add_scalar(
-                    "1.Total_reward/1.Total_reward", info["total_reward"], counter,
+                    "1.Total_reward/1.Total_reward",
+                    info["total_reward"],
+                    counter,
                 )
                 writer.add_scalar(
-                    "1.Total_reward/2.Mean_value", info["mean_value"], counter,
+                    "1.Total_reward/2.Mean_value",
+                    info["mean_value"],
+                    counter,
                 )
                 writer.add_scalar(
-                    "1.Total_reward/3.Episode_length", info["episode_length"], counter,
+                    "1.Total_reward/3.Episode_length",
+                    info["episode_length"],
+                    counter,
                 )
                 writer.add_scalar(
-                    "1.Total_reward/4.MuZero_reward", info["muzero_reward"], counter,
+                    "1.Total_reward/4.MuZero_reward",
+                    info["muzero_reward"],
+                    counter,
                 )
                 writer.add_scalar(
                     "1.Total_reward/5.Opponent_reward",
@@ -273,7 +288,9 @@ class MuZero:
                     counter,
                 )
                 writer.add_scalar(
-                    "2.Workers/1.Self_played_games", info["num_played_games"], counter,
+                    "2.Workers/1.Self_played_games",
+                    info["num_played_games"],
+                    counter,
                 )
                 writer.add_scalar(
                     "2.Workers/2.Training_steps", info["training_step"], counter
@@ -366,7 +383,8 @@ class MuZero:
         opponent = opponent if opponent else self.config.opponent
         muzero_player = muzero_player if muzero_player else self.config.muzero_player
         self_play_worker = self_play.SelfPlay.options(
-            num_cpus=0, num_gpus=num_gpus,
+            num_cpus=0,
+            num_gpus=num_gpus,
         ).remote(self.checkpoint, self.Game, self.config, numpy.random.randint(10000))
         results = []
         for i in range(num_tests):
@@ -374,7 +392,11 @@ class MuZero:
             results.append(
                 ray.get(
                     self_play_worker.play_game.remote(
-                        0, 0, render, opponent, muzero_player,
+                        0,
+                        0,
+                        render,
+                        opponent,
+                        muzero_player,
                     )
                 )
             )
@@ -587,7 +609,8 @@ def load_model_menu(muzero, game_name):
         replay_buffer_path = f"{options[choice]}replay_buffer.pkl"
 
     muzero.load_model(
-        checkpoint_path=checkpoint_path, replay_buffer_path=replay_buffer_path,
+        checkpoint_path=checkpoint_path,
+        replay_buffer_path=replay_buffer_path,
     )
 
 

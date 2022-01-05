@@ -10,12 +10,14 @@ from .abstract_game import AbstractGame
 
 sys.path.append("ext/ManiSkill")
 import mani_skill.env
-#from mani_skill.utils.ee import EndEffectorInterface
 
-ACTION_SPACE = list(range(13 * 2)) # 13 joints, 2 options (+/-) or each.
+# from mani_skill.utils.ee import EndEffectorInterface
+
+ACTION_SPACE = list(range(13 * 2))  # 13 joints, 2 options (+/-) or each.
 ACTION_PITCH = 0.1
 HISTORY = 16
 MAX_MOVES = 1000
+
 
 class MuZeroConfig:
     def __init__(self):
@@ -43,7 +45,9 @@ class MuZeroConfig:
         ### Self-Play
         self.num_workers = 3  # Number of simultaneous threads/workers self-playing to feed the replay buffer
         self.selfplay_on_gpu = False
-        self.max_moves = MAX_MOVES  # Maximum number of moves if game is not finished before
+        self.max_moves = (
+            MAX_MOVES  # Maximum number of moves if game is not finished before
+        )
         self.num_simulations = 20  # Number of future moves self-simulated
         self.discount = 0.997  # Chronological discount of the reward
         self.temperature_threshold = None  # Number of moves before dropping the temperature given by visit_softmax_temperature_fn to 0 (ie selecting the best action). If None, visit_softmax_temperature_fn is used every time
@@ -156,15 +160,15 @@ class MuZeroConfig:
 
 class Game(AbstractGame):
     def __init__(self, seed=None):
-        env_name = 'OpenCabinetDoor-v0'
+        env_name = "OpenCabinetDoor-v0"
         self.env = gym.make(env_name)
-        self.env.set_env_mode(obs_mode='rgbd', reward_type='dense')
+        self.env.set_env_mode(obs_mode="rgbd", reward_type="dense")
         self.history = numpy.zeros((9, 160, 400))
-        #self.ee_interface = EndEffectorInterface(env_name)
+        # self.ee_interface = EndEffectorInterface(env_name)
         # Format: https://github.com/haosulab/ManiSkill/wiki/Detailed-Explanation-of-Action
         if seed is not None:
             self.env.seed(seed)
-        #self.action_names = {
+        # self.action_names = {
         #        0: "x velocity of moving platform",
         #        1: "y velocity of moving platform",
         #        2: "rotation velocity of moving platform",
@@ -205,5 +209,5 @@ class Game(AbstractGame):
         self.env.render()
         input("Press enter to take a step ")
 
-    #def action_to_string(self, action_number):
+    # def action_to_string(self, action_number):
     #    return f"{action_number}. {self.action_names[action_number]}"
