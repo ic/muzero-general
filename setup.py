@@ -6,7 +6,7 @@ setup(
     author="Werner Duvaud et al",
     zip_safe=False,
     packages=find_namespace_packages(
-        where='.',
+        where='src',
         exclude=[]
     ),
     install_requires=[
