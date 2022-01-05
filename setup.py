@@ -11,6 +11,7 @@ setup(
         "nevergrad",
         "numpy",
         "ray",
-        "torch==1.7.1"
+        "tensorboard",
+        "torch==1.7.1",
     ]
 )
