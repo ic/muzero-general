@@ -14,6 +14,8 @@ import mani_skill.env
 
 ACTION_SPACE = list(range(13 * 2)) # 13 joints, 2 options (+/-) or each.
 ACTION_PITCH = 0.1
+HISTORY = 16
+MAX_MOVES = 1000
 
 class MuZeroConfig:
     def __init__(self):
@@ -32,17 +34,17 @@ class MuZeroConfig:
         self.players = list(
             range(1)
         )  # List of players. You should only edit the length
-        self.stacked_observations = 0  # Number of previous observations and previous actions to add to the current observation
+        self.stacked_observations = HISTORY  # Number of previous observations and previous actions to add to the current observation
 
         # Evaluate
         self.muzero_player = 0  # Turn Muzero begins to play (0: MuZero plays first, 1: MuZero plays second)
         self.opponent = None  # Hard coded agent that MuZero faces to assess his progress in multiplayer games. It doesn't influence training. None, "random" or "expert" if implemented in the Game class
 
         ### Self-Play
-        self.num_workers = 1  # Number of simultaneous threads/workers self-playing to feed the replay buffer
+        self.num_workers = 3  # Number of simultaneous threads/workers self-playing to feed the replay buffer
         self.selfplay_on_gpu = False
-        self.max_moves = 10  # Maximum number of moves if game is not finished before
-        self.num_simulations = 3  # Number of future moves self-simulated
+        self.max_moves = MAX_MOVES  # Maximum number of moves if game is not finished before
+        self.num_simulations = 20  # Number of future moves self-simulated
         self.discount = 0.997  # Chronological discount of the reward
         self.temperature_threshold = None  # Number of moves before dropping the temperature given by visit_softmax_temperature_fn to 0 (ie selecting the best action). If None, visit_softmax_temperature_fn is used every time
 
@@ -59,8 +61,8 @@ class MuZeroConfig:
         self.support_size = 10  # Value and reward are scaled (with almost sqrt) and encoded on a vector with a range of -support_size to support_size. Choose it so that support_size <= sqrt(max(abs(discounted reward)))
 
         # Residual Network
-        self.downsample = False  # Downsample observations before representation network, False / "CNN" (lighter) / "resnet" (See paper appendix Network Architecture)
-        self.blocks = 1  # Number of blocks in the ResNet
+        self.downsample = "resnet"  # Downsample observations before representation network, False / "CNN" (lighter) / "resnet" (See paper appendix Network Architecture)
+        self.blocks = 16  # Number of blocks in the ResNet
         self.channels = 2  # Number of channels in the ResNet
         self.reduced_channels_reward = 2  # Number of channels in reward head
         self.reduced_channels_value = 2  # Number of channels in value head
@@ -97,12 +99,12 @@ class MuZeroConfig:
         self.save_model = (
             True  # Save the checkpoint in results_path as model.checkpoint
         )
-        self.training_steps = 100000  # Total number of training steps (ie weights update according to a batch)
+        self.training_steps = 1000000  # Total number of training steps (ie weights update according to a batch)
         self.batch_size = (
             64  # Number of parts of games to train on at each training step
         )
         self.checkpoint_interval = (
-            3  # Number of training steps before using the model for self-playing
+            30  # Number of training steps before using the model for self-playing
         )
         self.value_loss_weight = 1  # Scale the value loss to avoid overfitting of the value function, paper recommends 0.25 (See paper appendix Reanalyze)
         self.train_on_gpu = torch.cuda.is_available()  # Train on GPU if available
@@ -156,7 +158,8 @@ class Game(AbstractGame):
     def __init__(self, seed=None):
         env_name = 'OpenCabinetDoor-v0'
         self.env = gym.make(env_name)
-        self.env.set_env_mode(obs_mode='rgbd', reward_type='sparse')
+        self.env.set_env_mode(obs_mode='rgbd', reward_type='dense')
+        self.history = numpy.zeros((9, 160, 400))
         #self.ee_interface = EndEffectorInterface(env_name)
         # Format: https://github.com/haosulab/ManiSkill/wiki/Detailed-Explanation-of-Action
         if seed is not None:
