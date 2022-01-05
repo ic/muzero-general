@@ -9,6 +9,7 @@ setup(
         where='src',
         exclude=[]
     ),
+    package_dir={'': 'src'},
     install_requires=[
         "gym",
         "hiredis",
