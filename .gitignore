@@ -94,6 +94,7 @@ dmypy.json
 
 # Generated files
 results/
+imgui.ini
 
 # Downloaded datasets
 partnet-mobility-dataset/
