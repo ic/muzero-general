@@ -39,7 +39,7 @@ class MuZeroConfig:
         self.opponent = None  # Hard coded agent that MuZero faces to assess his progress in multiplayer games. It doesn't influence training. None, "random" or "expert" if implemented in the Game class
 
         ### Self-Play
-        self.num_workers = 3  # Number of simultaneous threads/workers self-playing to feed the replay buffer
+        self.num_workers = 5  # Number of simultaneous threads/workers self-playing to feed the replay buffer
         self.selfplay_on_gpu = False
         self.max_moves = (
             MAX_MOVES  # Maximum number of moves if game is not finished before
@@ -123,7 +123,7 @@ class MuZeroConfig:
             100  # Number of self-play games to keep in the replay buffer
         )
         self.num_unroll_steps = (
-            5  # Number of game moves to keep for every batch element
+            HISTORY  # Number of game moves to keep for every batch element
         )
         self.td_steps = 30  # Number of steps in the future to take into account for calculating the target value
         self.PER = False  # Prioritized Replay (See paper appendix Training), select in priority the elements in the replay buffer which are unexpected for the network
