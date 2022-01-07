@@ -580,7 +580,7 @@ def hyperparameter_search(
 
 def load_model_menu(muzero, game_name):
     # Configure running options
-    options = ["Specify paths manually"] + sorted(glob(f"results/{game_name}/*/"))
+    options = ["Specify paths manually"] + sorted(glob(f"{os.path.dirname(os.path.realpath(__file__))}/results/{game_name}/*/"))
     options.reverse()
     print()
     for i in range(len(options)):
